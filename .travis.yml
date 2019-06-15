@@ -1,6 +1,9 @@
 language: node_js
 node_js:
   - 10.6.0
+addons:
+  firefox: latest
+  chrome: stable
 script:
   - yarn build
   - yarn test
