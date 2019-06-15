@@ -16,7 +16,7 @@ module.exports = config => {
       'text/x-typescript': ['ts', 'tsx']
     },
 
-    browsers: ['Firefox'],
+    browsers: process.env.CI ? ['Chrome', 'Firefox'] : ['Chrome'],
 
     reporters: process.env.CI
       ? ['nyan', 'coverage-istanbul', 'coveralls']
