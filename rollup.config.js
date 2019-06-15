@@ -1,7 +1,7 @@
-import sourceMaps from 'rollup-plugin-sourcemaps'
-import typescript from 'rollup-plugin-typescript2'
-import camelCase from 'lodash.camelcase'
-import { terser } from 'rollup-plugin-terser'
+const sourceMaps = require('rollup-plugin-sourcemaps')
+const typescript = require('rollup-plugin-typescript2')
+const camelCase = require('lodash.camelcase')
+const { terser } = require('rollup-plugin-terser')
 
 const pkg = require('./package.json')
 
@@ -48,4 +48,4 @@ function umdConfig() {
   return config
 }
 
-export default [esConfig(), umdConfig()]
+module.exports = [esConfig(), umdConfig()]

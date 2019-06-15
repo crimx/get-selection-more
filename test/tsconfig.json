@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig",
+  "compilerOptions": {
+    "jsx": "react",
+    "jsxFactory": "h",
+    "typeRoots": [
+      "../node_modules/@types",
+      "./typings"
+    ]
+  },
+  "include": [
+    "./**/*.spec.tsx"
+  ]
+}
