@@ -82,7 +82,7 @@ module.exports = config => {
     },
 
     nyanReporter: {
-      renderOnRunCompleteOnly: !process.env.CI
+      renderOnRunCompleteOnly: process.env.CI
     }
   })
 }
