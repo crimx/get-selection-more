@@ -20,6 +20,29 @@ export function getText(win = window): string {
 }
 
 /**
+ * Returns the paragraph containing the selection text.
+ */
+export function getParagraph(win = window): string {
+  const selection = win.getSelection()
+  if (!selection) {
+    return ''
+  }
+
+  const selectedText = selection.toString()
+  if (!selectedText.trim()) {
+    return ''
+  }
+
+  return (
+    extractParagraphHead(selection.anchorNode, selection.anchorOffset) +
+    selectedText +
+    extractParagraphTail(selection.focusNode, selection.focusOffset)
+  )
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
  * Returns the sentence containing the selection text.
  */
 export function getSentence(win = window): string {
@@ -42,7 +65,7 @@ export function getSentence(win = window): string {
     .trim()
 }
 
-function extractSentenceHead(anchorNode: Node | null, anchorOffset: number): string {
+function extractParagraphHead(anchorNode: Node | null, anchorOffset: number): string {
   if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) {
     return ''
   }
@@ -52,41 +75,17 @@ function extractSentenceHead(anchorNode: Node | null, anchorOffset: number): str
     leadingText = leadingText.slice(0, anchorOffset)
   }
 
-  // prev siblings
-  for (let node = anchorNode.previousSibling; node; node = node.previousSibling) {
-    leadingText = getTextFromNode(node) + leadingText
-  }
-
   // parent prev siblings
-  for (
-    let element = anchorNode.parentElement;
-    element && element !== document.body && isInlineTag(element);
-    element = element.parentElement
-  ) {
-    for (let node = element.previousSibling; node; node = node.previousSibling) {
+  for (let parent = anchorNode; isInlineNode(parent); parent = parent.parentElement) {
+    for (let node = parent.previousSibling; isInlineNode(parent); node = node.previousSibling) {
       leadingText = getTextFromNode(node) + leadingText
-    }
-  }
-
-  const puncTester = /[.?!。？！…]/
-  /** meaningful char after dot "." */
-  const charTester = /[^\s.?!。？！…]/
-
-  for (let i = leadingText.length - 1; i >= 0; i--) {
-    const c = leadingText[i]
-    if (puncTester.test(c)) {
-      if (c === '.' && charTester.test(leadingText[i + 1])) {
-        // a.b is allowed
-        continue
-      }
-      return leadingText.slice(i + 1)
     }
   }
 
   return leadingText
 }
 
-function extractSentenceTail(focusNode: Node | null, focusOffset: number): string {
+function extractParagraphTail(focusNode: Node | null, focusOffset: number): string {
   if (!focusNode || focusNode.nodeType !== Node.TEXT_NODE) {
     return ''
   }
@@ -96,22 +95,41 @@ function extractSentenceTail(focusNode: Node | null, focusOffset: number): strin
     tailingText = tailingText.slice(focusOffset)
   }
 
-  // next siblings
-  for (let node = focusNode.nextSibling; node; node = node.nextSibling) {
-    tailingText += getTextFromNode(node)
-  }
-
   // parent next siblings
-  for (
-    let element = focusNode.parentElement;
-    element && element !== document.body && isInlineTag(element);
-    element = element.parentElement
-  ) {
-    for (let node = element.nextSibling; node; node = node.nextSibling) {
+  for (let parent = focusNode; isInlineNode(parent); parent = parent.parentElement) {
+    for (let node = parent.nextSibling; isInlineNode(parent); node = node.nextSibling) {
       tailingText += getTextFromNode(node)
     }
   }
 
+  // match tail                                                       for "..."
+  const sentenceTailTester = /^((\.(?![\s.?!。？！…]))|[^.?!。？！…])*([.?!。？！…]){0,3}/
+  return (tailingText.match(sentenceTailTester) || [''])[0]
+}
+
+function extractSentenceHead(anchorNode: Node | null, anchorOffset: number): string {
+  const leadingText = extractParagraphHead(anchorNode, anchorOffset)
+  if (leadingText) {
+    const puncTester = /[.?!。？！…]/
+    /** meaningful char after dot "." */
+    const charTester = /[^\s.?!。？！…]/
+
+    for (let i = leadingText.length - 1; i >= 0; i--) {
+      const c = leadingText[i]
+      if (puncTester.test(c)) {
+        if (c === '.' && charTester.test(leadingText[i + 1])) {
+          // a.b is allowed
+          continue
+        }
+        return leadingText.slice(i + 1)
+      }
+    }
+  }
+  return leadingText
+}
+
+function extractSentenceTail(focusNode: Node | null, focusOffset: number): string {
+  const tailingText = extractParagraphTail(focusNode, focusOffset)
   // match tail                                                       for "..."
   const sentenceTailTester = /^((\.(?![\s.?!。？！…]))|[^.?!。？！…])*([.?!。？！…]){0,3}/
   return (tailingText.match(sentenceTailTester) || [''])[0]
@@ -126,40 +144,52 @@ function getTextFromNode(node: Node): string {
   return ''
 }
 
-function isInlineTag(el: HTMLElement): boolean {
-  switch (el.tagName) {
-    case 'A':
-    case 'ABBR':
-    case 'B':
-    case 'BDI':
-    case 'BDO':
-    case 'BR':
-    case 'CITE':
-    case 'CODE':
-    case 'DATA':
-    case 'DFN':
-    case 'EM':
-    case 'I':
-    case 'KBD':
-    case 'MARK':
-    case 'Q':
-    case 'RP':
-    case 'RT':
-    case 'RTC':
-    case 'RUBY':
-    case 'S':
-    case 'SAMP':
-    case 'SMALL':
-    case 'SPAN':
-    case 'STRONG':
-    case 'SUB':
-    case 'SUP':
-    case 'TIME':
-    case 'U':
-    case 'VAR':
-    case 'WBR':
-      return true
-    default:
-      return false
+function isInlineNode(node?: Node | null): boolean {
+  if (!node) {
+    return false
   }
+
+  if (node.nodeType === Node.TEXT_NODE) {
+    return true
+  }
+
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    switch ((node as HTMLElement).tagName) {
+      case 'A':
+      case 'ABBR':
+      case 'B':
+      case 'BDI':
+      case 'BDO':
+      case 'BR':
+      case 'CITE':
+      case 'CODE':
+      case 'DATA':
+      case 'DFN':
+      case 'EM':
+      case 'I':
+      case 'KBD':
+      case 'MARK':
+      case 'Q':
+      case 'RP':
+      case 'RT':
+      case 'RTC':
+      case 'RUBY':
+      case 'S':
+      case 'SAMP':
+      case 'SMALL':
+      case 'SPAN':
+      case 'STRONG':
+      case 'SUB':
+      case 'SUP':
+      case 'TIME':
+      case 'U':
+      case 'VAR':
+      case 'WBR':
+        return true
+      default:
+        return false
+    }
+  }
+
+  return false
 }
