@@ -16,9 +16,11 @@ module.exports = config => {
       'text/x-typescript': ['ts', 'tsx']
     },
 
-    browsers: ['Chrome'],
+    browsers: ['Firefox'],
 
-    reporters: ['nyan', 'coverage-istanbul'],
+    reporters: process.env.CI
+      ? ['nyan', 'coverage-istanbul', 'coveralls']
+      : ['nyan', 'coverage-istanbul'],
 
     webpackMiddleware: {
       noInfo: true,
@@ -59,13 +61,24 @@ module.exports = config => {
       }
     },
 
-    coverageIstanbulReporter: {
-      reports: ['html', 'text-summary'],
-      dir: path.join(__dirname, 'coverage'),
-      fixWebpackSourcePaths: true,
-      'report-config': {
-        html: { outdir: 'html' }
-      }
+    coverageIstanbulReporter: process.env.CI
+      ? {
+          reports: ['lcovonly', 'text-summary'],
+          dir: path.join(__dirname, 'coverage'),
+          fixWebpackSourcePaths: true
+        }
+      : {
+          reports: ['html', 'lcovonly', 'text-summary'],
+          dir: path.join(__dirname, 'coverage'),
+          fixWebpackSourcePaths: true,
+          'report-config': {
+            html: { outdir: 'html' }
+          }
+        },
+
+    coverageReporter: {
+      type: 'lcovonly',
+      dir: 'coverage/'
     },
 
     nyanReporter: {
