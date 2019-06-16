@@ -14,6 +14,12 @@ describe('getParagraph', () => {
     window.getSelection().removeAllRanges()
   })
 
+  after(() => {
+    if ($root) {
+      $root.remove()
+    }
+  })
+
   it('should return empty text when no selection', () => {
     expect(getParagraph()).to.be.equal('')
   })
