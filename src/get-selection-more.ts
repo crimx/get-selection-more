@@ -2,12 +2,16 @@
  * Returns the selected text
  */
 export function getText(win = window): string {
+  // When called on an <iframe> that is not displayed (eg. where display: none is set)
+  // Firefox will return null, whereas other browsers will return a Selection object
+  // with Selection.type set to None.
   const selection = (win.getSelection() || '').toString().trim()
   if (selection) {
     return selection
   }
 
-  // Firefox fix
+  // Currently getSelection() doesn't work on the content of <input> elements in Firefox
+  // Document.activeElement returns the focused element.
   const activeElement = win.document.activeElement
   if (activeElement) {
     if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
@@ -24,7 +28,7 @@ export function getText(win = window): string {
  */
 export function getParagraph(win = window): string {
   const selection = win.getSelection()
-  if (!selection) {
+  if (!selection || selection.rangeCount <= 0) {
     return ''
   }
 
@@ -33,11 +37,12 @@ export function getParagraph(win = window): string {
     return ''
   }
 
-  return (
-    extractParagraphHead(selection.anchorNode, selection.anchorOffset) +
-    selectedText +
-    extractParagraphTail(selection.focusNode, selection.focusOffset)
-  )
+  const range = selection.getRangeAt(0)
+  if (!range) {
+    return ''
+  }
+
+  return (extractParagraphHead(range) + selectedText + extractParagraphTail(range))
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -47,7 +52,7 @@ export function getParagraph(win = window): string {
  */
 export function getSentence(win = window): string {
   const selection = win.getSelection()
-  if (!selection) {
+  if (!selection || selection.rangeCount <= 0) {
     return ''
   }
 
@@ -56,59 +61,86 @@ export function getSentence(win = window): string {
     return ''
   }
 
+  const range = selection.getRangeAt(0)
+  if (!range) {
+    return ''
+  }
+
   return (
-    extractSentenceHead(selection.anchorNode, selection.anchorOffset) +
+    extractSentenceHead(extractParagraphHead(range)) +
     selectedText +
-    extractSentenceTail(selection.focusNode, selection.focusOffset)
+    extractSentenceTail(extractParagraphTail(range))
   )
     .replace(/\s+/g, ' ')
     .trim()
 }
 
-function extractParagraphHead(anchorNode: Node | null, anchorOffset: number): string {
-  if (!anchorNode || anchorNode.nodeType !== Node.TEXT_NODE) {
+function extractParagraphHead(range: Range): string {
+  if (!range.startContainer) {
     return ''
   }
 
-  let leadingText = anchorNode.textContent || ''
-  if (leadingText) {
-    leadingText = leadingText.slice(0, anchorOffset)
+  let startNode = range.startContainer
+  let leadingText = ''
+  switch (startNode.nodeType) {
+    case Node.TEXT_NODE: {
+      const textContent = startNode.textContent
+      if (textContent) {
+        leadingText = textContent.slice(0, range.startOffset)
+      }
+      break
+    }
+    case Node.COMMENT_NODE:
+    case Node.CDATA_SECTION_NODE:
+      break
+    default:
+      startNode = startNode.childNodes[range.startOffset]
   }
 
   // parent prev siblings
-  for (let parent = anchorNode; isInlineNode(parent); parent = parent.parentElement) {
-    for (let node = parent.previousSibling; isInlineNode(parent); node = node.previousSibling) {
-      leadingText = getTextFromNode(node) + leadingText
+  for (let node = startNode; isInlineNode(node); node = node.parentElement) {
+    for (let sibl = node.previousSibling; isInlineNode(sibl); sibl = sibl.previousSibling) {
+      leadingText = getTextFromNode(sibl) + leadingText
     }
   }
 
   return leadingText
 }
 
-function extractParagraphTail(focusNode: Node | null, focusOffset: number): string {
-  if (!focusNode || focusNode.nodeType !== Node.TEXT_NODE) {
+function extractParagraphTail(range: Range): string {
+  if (!range.endContainer) {
     return ''
   }
 
-  let tailingText = focusNode.textContent || ''
-  if (tailingText) {
-    tailingText = tailingText.slice(focusOffset)
+  let endNode = range.endContainer
+  let tailingText = ''
+  switch (endNode.nodeType) {
+    case Node.TEXT_NODE: {
+      const textContent = endNode.textContent
+      if (textContent) {
+        tailingText = textContent.slice(range.endOffset)
+      }
+      break
+    }
+    case Node.COMMENT_NODE:
+    case Node.CDATA_SECTION_NODE:
+      break
+    default:
+      endNode = endNode.childNodes[endNode.childNodes.length - range.endOffset - 1]
   }
 
   // parent next siblings
-  for (let parent = focusNode; isInlineNode(parent); parent = parent.parentElement) {
-    for (let node = parent.nextSibling; isInlineNode(parent); node = node.nextSibling) {
-      tailingText += getTextFromNode(node)
+  for (let node = endNode; isInlineNode(node); node = node.parentElement) {
+    for (let sibl = node.nextSibling; isInlineNode(sibl); sibl = sibl.nextSibling) {
+      tailingText += getTextFromNode(sibl)
     }
   }
 
-  // match tail                                                       for "..."
-  const sentenceTailTester = /^((\.(?![\s.?!。？！…]))|[^.?!。？！…])*([.?!。？！…]){0,3}/
-  return (tailingText.match(sentenceTailTester) || [''])[0]
+  return tailingText
 }
 
-function extractSentenceHead(anchorNode: Node | null, anchorOffset: number): string {
-  const leadingText = extractParagraphHead(anchorNode, anchorOffset)
+function extractSentenceHead(leadingText: string): string {
+  // split regexp to prevent backtracking
   if (leadingText) {
     const puncTester = /[.?!。？！…]/
     /** meaningful char after dot "." */
@@ -128,11 +160,10 @@ function extractSentenceHead(anchorNode: Node | null, anchorOffset: number): str
   return leadingText
 }
 
-function extractSentenceTail(focusNode: Node | null, focusOffset: number): string {
-  const tailingText = extractParagraphTail(focusNode, focusOffset)
+function extractSentenceTail(tailingText: string): string {
   // match tail                                                       for "..."
-  const sentenceTailTester = /^((\.(?![\s.?!。？！…]))|[^.?!。？！…])*([.?!。？！…]){0,3}/
-  return (tailingText.match(sentenceTailTester) || [''])[0]
+  const tailMatch = /^((\.(?![\s.?!。？！…]))|[^.?!。？！…])*([.?!。？！…]){0,3}/.exec(tailingText)
+  return tailMatch ? tailMatch[0] : ''
 }
 
 function getTextFromNode(node: Node): string {
