@@ -11,7 +11,11 @@ describe('getText', () => {
     $root = <div></div>
     document.body.appendChild($root)
 
-    getSelection().removeAllRanges()
+    window.getSelection().removeAllRanges()
+  })
+
+  it('should return empty text when no selection', () => {
+    expect(getText()).to.be.equal('')
   })
 
   it('should return whole text when a element node is selected', () => {
@@ -20,7 +24,7 @@ describe('getText', () => {
 
     const range = document.createRange()
     range.selectNode(el)
-    getSelection().addRange(range)
+    window.getSelection().addRange(range)
 
     expect(getText()).to.be.equal('test')
   })
@@ -31,7 +35,7 @@ describe('getText', () => {
 
     const range = document.createRange()
     range.selectNode(el)
-    getSelection().addRange(range)
+    window.getSelection().addRange(range)
 
     expect(getText()).equal('testtesttest')
   })
@@ -43,7 +47,7 @@ describe('getText', () => {
     const range = document.createRange()
     range.setStart(el.firstElementChild.firstChild, 2)
     range.setEnd(el.firstElementChild.firstChild, 3)
-    getSelection().addRange(range)
+    window.getSelection().addRange(range)
 
     expect(getText()).to.equal('s')
   })
@@ -55,7 +59,7 @@ describe('getText', () => {
     const range = document.createRange()
     range.setStart(el.firstElementChild.firstChild, 2)
     range.setEnd(el.lastChild, 3)
-    getSelection().addRange(range)
+    window.getSelection().addRange(range)
 
     expect(getText()).to.equal('sttes')
   })
@@ -73,7 +77,7 @@ describe('getText', () => {
     const range = document.createRange()
     range.setStart(el.firstElementChild.firstChild, 2)
     range.setEnd(el.lastElementChild.firstChild, 3)
-    getSelection().addRange(range)
+    window.getSelection().addRange(range)
 
     expect(getText()).to.equal('st\ntest\ntes')
   })
@@ -88,5 +92,35 @@ describe('getText', () => {
     el.setSelectionRange(0, 4)
 
     expect(getText()).to.equal('test')
+  })
+
+  it('should return selected text in iframe', () => {
+    const iframe = <iframe /> as HTMLIFrameElement
+    $root.appendChild(iframe)
+
+    const el = <div>test</div>
+    iframe.contentDocument.body.appendChild(el)
+
+    const range = iframe.contentDocument.createRange()
+    range.selectNode(el)
+    iframe.contentWindow.getSelection().addRange(range)
+
+    expect(getText()).to.be.equal('')
+    expect(getText(iframe.contentWindow)).to.be.equal('test')
+  })
+
+  it('should return empty text in non-displayed iframe', () => {
+    const iframe = <iframe style="display: none" /> as HTMLIFrameElement
+    $root.appendChild(iframe)
+
+    const el = <div>test</div>
+    iframe.contentDocument.body.appendChild(el)
+
+    const range = iframe.contentDocument.createRange()
+    range.selectNode(el)
+    iframe.contentWindow.getSelection().addRange(range)
+
+    expect(getText()).to.be.equal('')
+    expect(getText(iframe.contentWindow)).to.be.equal('')
   })
 })
