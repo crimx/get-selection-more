@@ -105,4 +105,27 @@ describe('getParagraph', () => {
     expect(getParagraph()).to.be.equal('')
     expect(getParagraph(iframe.contentWindow)).to.be.equal('onetwothreefourfive')
   })
+
+  it('should ignore comment nodes', () => {
+    const el = (
+      <div>
+        <a>one</a>
+        two
+        <span id='selected'>three</span>
+        <i>four</i>
+        five
+        <div>six</div>
+      </div>
+    )
+    $root.appendChild(el)
+
+    const selected = document.getElementById('selected')
+    el.insertBefore(document.createComment('this is a comment'), selected)
+
+    const range = document.createRange()
+    range.selectNode(selected)
+    window.getSelection().addRange(range)
+
+    expect(getParagraph()).equal('onetwothreefourfive')
+  })
 })
