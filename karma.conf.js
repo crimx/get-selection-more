@@ -70,7 +70,7 @@ module.exports = config => {
         }
       : {
           reports: ['html', 'lcovonly', 'text-summary'],
-          dir: path.join(__dirname, 'coverage', '%browser%'),
+          dir: path.join(__dirname, 'coverage/%browser%/'),
           fixWebpackSourcePaths: true,
           'report-config': {
             html: { outdir: 'html' }
