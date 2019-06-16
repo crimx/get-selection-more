@@ -126,7 +126,7 @@ function extractParagraphTail(range: Range): string {
     case Node.CDATA_SECTION_NODE:
       break
     default:
-      endNode = endNode.childNodes[endNode.childNodes.length - range.endOffset - 1]
+      endNode = endNode.childNodes[range.endOffset - 1]
   }
 
   // parent next siblings
@@ -180,47 +180,49 @@ function isInlineNode(node?: Node | null): boolean {
     return false
   }
 
-  if (node.nodeType === Node.TEXT_NODE) {
-    return true
-  }
-
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    switch ((node as HTMLElement).tagName) {
-      case 'A':
-      case 'ABBR':
-      case 'B':
-      case 'BDI':
-      case 'BDO':
-      case 'BR':
-      case 'CITE':
-      case 'CODE':
-      case 'DATA':
-      case 'DFN':
-      case 'EM':
-      case 'I':
-      case 'KBD':
-      case 'MARK':
-      case 'Q':
-      case 'RP':
-      case 'RT':
-      case 'RTC':
-      case 'RUBY':
-      case 'S':
-      case 'SAMP':
-      case 'SMALL':
-      case 'SPAN':
-      case 'STRONG':
-      case 'SUB':
-      case 'SUP':
-      case 'TIME':
-      case 'U':
-      case 'VAR':
-      case 'WBR':
-        return true
-      default:
-        return false
+  switch (node.nodeType) {
+    case Node.TEXT_NODE:
+    case Node.COMMENT_NODE:
+    case Node.CDATA_SECTION_NODE:
+      return true
+    case Node.ELEMENT_NODE: {
+      switch ((node as HTMLElement).tagName) {
+        case 'A':
+        case 'ABBR':
+        case 'B':
+        case 'BDI':
+        case 'BDO':
+        case 'BR':
+        case 'CITE':
+        case 'CODE':
+        case 'DATA':
+        case 'DFN':
+        case 'EM':
+        case 'I':
+        case 'KBD':
+        case 'MARK':
+        case 'Q':
+        case 'RP':
+        case 'RT':
+        case 'RTC':
+        case 'RUBY':
+        case 'S':
+        case 'SAMP':
+        case 'SMALL':
+        case 'SPAN':
+        case 'STRONG':
+        case 'SUB':
+        case 'SUP':
+        case 'TIME':
+        case 'U':
+        case 'VAR':
+        case 'WBR':
+          return true
+        default:
+          return false
+      }
     }
+    default:
+      return false
   }
-
-  return false
 }
