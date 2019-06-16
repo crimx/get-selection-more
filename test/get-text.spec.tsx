@@ -107,6 +107,11 @@ describe('getText', () => {
     const el = <div>test</div>
     iframe.contentDocument.body.appendChild(el)
 
+    if (!iframe.contentWindow.getSelection()) {
+      // buggy firefox
+      return
+    }
+
     const range = iframe.contentDocument.createRange()
     range.selectNode(el)
     iframe.contentWindow.getSelection().addRange(range)
@@ -121,6 +126,11 @@ describe('getText', () => {
 
     const el = <div>test</div>
     iframe.contentDocument.body.appendChild(el)
+
+    if (!iframe.contentWindow.getSelection()) {
+      // buggy firefox
+      return
+    }
 
     const range = iframe.contentDocument.createRange()
     range.selectNode(el)

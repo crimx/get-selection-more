@@ -104,6 +104,11 @@ describe('getParagraph', () => {
     )
     iframe.contentDocument.body.appendChild(el)
 
+    if (!iframe.contentWindow.getSelection()) {
+      // buggy firefox
+      return
+    }
+
     const range = iframe.contentDocument.createRange()
     range.selectNode(iframe.contentDocument.getElementById('selected'))
     iframe.contentWindow.getSelection().addRange(range)

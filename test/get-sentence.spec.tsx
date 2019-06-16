@@ -95,8 +95,8 @@ describe('getSentence', () => {
     expect(getSentence()).equal('this code `foo.bar` should be bar.foo.')
   })
 
-  it('should return the pargraph of the selected text in iframe', () => {
-    const iframe = <iframe /> as HTMLIFrameElement
+  it('should return the sentence of the selected text in iframe', () => {
+    const iframe = <iframe srcDoc='<div></div>'></iframe> as HTMLIFrameElement
     $root.appendChild(iframe)
 
     const el = (
@@ -113,10 +113,16 @@ describe('getSentence', () => {
     )
     iframe.contentDocument.body.appendChild(el)
 
+    if (!iframe.contentWindow.getSelection()) {
+      // buggy firefox
+      return
+    }
+
     const range = iframe.contentDocument.createRange()
     range.setStart(iframe.contentDocument.getElementById('start').firstChild, 2)
     range.setEnd(iframe.contentDocument.getElementById('end').firstChild, 3)
     iframe.contentWindow.getSelection().addRange(range)
+
 
     expect(getSentence()).equal('')
     expect(getSentence(iframe.contentWindow)).equal('this is sentence one. this is sentence two.')
