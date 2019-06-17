@@ -1,6 +1,6 @@
 {
   "name": "get-selection-more",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Get text and context sentence from window.getSelection()",
   "keywords": [
     "getSelection",
