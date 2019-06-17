@@ -111,19 +111,6 @@ describe('getText', () => {
     expect(getText()).to.equal('')
   })
 
-  it('should return empty text when input is selected but lost focus', () => {
-    const el = (
-      <input type='text' value='test' />
-    ) as HTMLInputElement
-    $root.appendChild(el)
-
-    el.focus()
-    el.setSelectionRange(0, 4)
-    el.blur()
-
-    expect(getText()).to.equal('')
-  })
-
   it('should return selected text in iframe', () => {
     const iframe = <iframe /> as HTMLIFrameElement
     $root.appendChild(iframe)
