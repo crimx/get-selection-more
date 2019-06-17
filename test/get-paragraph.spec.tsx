@@ -24,6 +24,17 @@ describe('getParagraph', () => {
     expect(getParagraph()).to.be.equal('')
   })
 
+  it('should return empty text on empty element', () => {
+    const el = <div></div>
+    $root.appendChild(el)
+
+    const range = document.createRange()
+    range.selectNode(el)
+    window.getSelection().addRange(range)
+
+    expect(getParagraph()).to.be.equal('')
+  })
+
   it('should return only the text of a selected block element', () => {
     const el = (
       <div>
@@ -88,6 +99,21 @@ describe('getParagraph', () => {
     expect(getParagraph()).equal('onetwothreefour five sixseven. eight?')
   })
 
+  it('should return text when selection starts and ends on empty text node', () => {
+    const el = <div></div>
+    el.appendChild(document.createTextNode(''))
+    el.appendChild(<span>test</span>)
+    el.appendChild(document.createTextNode(''))
+    $root.appendChild(el)
+
+    const range = document.createRange()
+    range.setStart(el.firstChild, 0)
+    range.setEnd(el.lastChild, 0)
+    window.getSelection().addRange(range)
+
+    expect(getParagraph()).to.be.equal('test')
+  })
+
   it('should return the pargraph of the selected text in iframe', () => {
     const iframe = <iframe /> as HTMLIFrameElement
     $root.appendChild(iframe)
@@ -117,7 +143,7 @@ describe('getParagraph', () => {
     expect(getParagraph(iframe.contentWindow)).to.be.equal('onetwothreefourfive')
   })
 
-  it('should ignore comment nodes', () => {
+  it('should ignore sibling comment nodes', () => {
     const el = (
       <div>
         <a>one</a>
@@ -138,5 +164,20 @@ describe('getParagraph', () => {
     window.getSelection().addRange(range)
 
     expect(getParagraph()).equal('onetwothreefourfive')
+  })
+
+  it('should works when selecting comment nodes (unlikely to happen but just in case)', () => {
+    const el = <div></div>
+    el.appendChild(document.createComment('this is a comment'))
+    el.appendChild(<span>test</span>)
+    el.appendChild(document.createComment('this is a comment'))
+    $root.appendChild(el)
+
+    const range = document.createRange()
+    range.setStart(el.firstChild, 0)
+    range.setEnd(el.lastChild, 0)
+    window.getSelection().addRange(range)
+
+    expect(getParagraph()).equal('test')
   })
 })

@@ -24,6 +24,17 @@ describe('getSentence', () => {
     expect(getSentence()).to.be.equal('')
   })
 
+  it('should return empty text on empty element', () => {
+    const el = <div></div>
+    $root.appendChild(el)
+
+    const range = document.createRange()
+    range.selectNode(el)
+    window.getSelection().addRange(range)
+
+    expect(getSentence()).to.be.equal('')
+  })
+
   it('should return only the text of a selected block element', () => {
     const el = (
       <div>
@@ -83,7 +94,7 @@ describe('getSentence', () => {
   it('should allow "a.b"', () => {
     const el = (
       <div>
-        yo! this <span id='selected'>code</span> `foo.bar` should be bar.foo. ok?
+        yo! bar.foo <span id='selected'>code</span> like foo.bar should be allowed... ok?
       </div>
     )
     $root.appendChild(el)
@@ -92,7 +103,7 @@ describe('getSentence', () => {
     range.selectNode(document.getElementById('selected'))
     window.getSelection().addRange(range)
 
-    expect(getSentence()).equal('this code `foo.bar` should be bar.foo.')
+    expect(getSentence()).equal('bar.foo code like foo.bar should be allowed...')
   })
 
   it('should return the sentence of the selected text in iframe', () => {

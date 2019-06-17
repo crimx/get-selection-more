@@ -88,7 +88,7 @@ describe('getText', () => {
     expect(getText()).to.equal('st\ntest\ntes')
   })
 
-  it('should return selected text in input', () => {
+  it('should return selected text on input', () => {
     const el = (
       <input type='text' value='test' />
     ) as HTMLInputElement
@@ -98,6 +98,30 @@ describe('getText', () => {
     el.setSelectionRange(0, 4)
 
     expect(getText()).to.equal('test')
+  })
+
+  it('should return empty text on focused input with no selection', () => {
+    const el = (
+      <input type='text' />
+    ) as HTMLInputElement
+    $root.appendChild(el)
+
+    el.focus()
+
+    expect(getText()).to.equal('')
+  })
+
+  it('should return empty text when input is selected but lost focus', () => {
+    const el = (
+      <input type='text' value='test' />
+    ) as HTMLInputElement
+    $root.appendChild(el)
+
+    el.focus()
+    el.setSelectionRange(0, 4)
+    el.blur()
+
+    expect(getText()).to.equal('')
   })
 
   it('should return selected text in iframe', () => {
@@ -114,10 +138,17 @@ describe('getText', () => {
 
     const range = iframe.contentDocument.createRange()
     range.selectNode(el)
-    iframe.contentWindow.getSelection().addRange(range)
+    const selection = iframe.contentWindow.getSelection()
 
-    expect(getText()).to.be.equal('')
-    expect(getText(iframe.contentWindow)).to.be.equal('test')
+    if (selection) {
+      selection.addRange(range)
+      expect(getText()).to.be.equal('')
+      expect(getText(iframe.contentWindow)).to.be.equal('test')
+    } else {
+      // buggy firefox
+      expect(getText()).to.be.equal('')
+      expect(getText(iframe.contentWindow)).to.be.equal('')
+    }
   })
 
   it('should return empty text in non-displayed iframe', () => {
@@ -127,14 +158,13 @@ describe('getText', () => {
     const el = <div>test</div>
     iframe.contentDocument.body.appendChild(el)
 
-    if (!iframe.contentWindow.getSelection()) {
-      // buggy firefox
-      return
-    }
-
     const range = iframe.contentDocument.createRange()
     range.selectNode(el)
-    iframe.contentWindow.getSelection().addRange(range)
+    const selection = iframe.contentWindow.getSelection()
+
+    if (selection) {
+      selection.addRange(range)
+    }
 
     expect(getText()).to.be.equal('')
     expect(getText(iframe.contentWindow)).to.be.equal('')

@@ -13,6 +13,7 @@ export function getText(win = window): string {
   // Currently getSelection() doesn't work on the content of <input> elements in Firefox
   // Document.activeElement returns the focused element.
   const activeElement = win.document.activeElement
+  /* istanbul ignore else */
   if (activeElement) {
     if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
       const el = activeElement as HTMLInputElement | HTMLTextAreaElement
@@ -38,6 +39,8 @@ export function getParagraph(win = window): string {
   }
 
   const range = selection.getRangeAt(0)
+  // double sanity check, which is unlikely to happen due to the rangeCount check above
+  /* istanbul ignore if */
   if (!range) {
     return ''
   }
@@ -62,6 +65,8 @@ export function getSentence(win = window): string {
   }
 
   const range = selection.getRangeAt(0)
+  // double sanity check, which is unlikely to happen due to the rangeCount check above
+  /* istanbul ignore if */
   if (!range) {
     return ''
   }
@@ -76,10 +81,6 @@ export function getSentence(win = window): string {
 }
 
 function extractParagraphHead(range: Range): string {
-  if (!range.startContainer) {
-    return ''
-  }
-
   let startNode = range.startContainer
   let leadingText = ''
   switch (startNode.nodeType) {
@@ -108,10 +109,6 @@ function extractParagraphHead(range: Range): string {
 }
 
 function extractParagraphTail(range: Range): string {
-  if (!range.endContainer) {
-    return ''
-  }
-
   let endNode = range.endContainer
   let tailingText = ''
   switch (endNode.nodeType) {
@@ -163,14 +160,15 @@ function extractSentenceHead(leadingText: string): string {
 function extractSentenceTail(tailingText: string): string {
   // match tail                                                       for "..."
   const tailMatch = /^((\.(?![\s.?!。？！…]))|[^.?!。？！…])*([.?!。？！…]){0,3}/.exec(tailingText)
-  return tailMatch ? tailMatch[0] : ''
+  // the regexp will match empty string so it is unlikely to have null result
+  return tailMatch ? tailMatch[0] : /* istanbul ignore next */ ''
 }
 
 function getTextFromNode(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent || ''
+    return (node as Text).nodeValue
   } else if (node.nodeType === Node.ELEMENT_NODE) {
-    return (node as HTMLElement).innerText
+    return (node as HTMLElement).innerText || /* istanbul ignore next: SVG? */ ''
   }
   return ''
 }
@@ -218,11 +216,8 @@ function isInlineNode(node?: Node | null): boolean {
         case 'VAR':
         case 'WBR':
           return true
-        default:
-          return false
       }
     }
-    default:
-      return false
   }
+  return false
 }
