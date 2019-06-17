@@ -17,6 +17,8 @@ export declare function getParagraph(win?: Window): string;
 export declare function getSentence(win?: Window): string;
 ```
 
+Optionally pass `window` of other frame to get selection within that frame.
+
 ## Usage
 
 ```javascript
