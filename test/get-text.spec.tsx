@@ -1,4 +1,4 @@
-import { getText } from '../src/get-selection-more'
+import { getText, getTextFromSelection } from '../src/get-selection-more'
 import { h } from 'tsx-dom'
 
 describe('getText', () => {
@@ -11,7 +11,7 @@ describe('getText', () => {
     $root = <div></div>
     document.body.appendChild($root)
 
-    window.getSelection().removeAllRanges()
+    window.getSelection()!.removeAllRanges()
   })
 
   after(() => {
@@ -22,6 +22,7 @@ describe('getText', () => {
 
   it('should return empty text when no selection', () => {
     expect(getText()).to.be.equal('')
+    expect(getTextFromSelection(window.getSelection())).to.be.equal('')
   })
 
   it('should return whole text when a element node is selected', () => {
@@ -30,42 +31,54 @@ describe('getText', () => {
 
     const range = document.createRange()
     range.selectNode(el)
-    window.getSelection().addRange(range)
+    window.getSelection()!.addRange(range)
 
     expect(getText()).to.be.equal('test')
   })
 
   it('should return text of all the children when a element node is selected', () => {
-    const el = <div>test<span>test</span>test</div>
+    const el = (
+      <div>
+        test<span>test</span>test
+      </div>
+    )
     $root.appendChild(el)
 
     const range = document.createRange()
     range.selectNode(el)
-    window.getSelection().addRange(range)
+    window.getSelection()!.addRange(range)
 
     expect(getText()).equal('testtesttest')
   })
 
   it('should return selected text when part of a text node is selected', () => {
-    const el = <div>test<span>test</span>test</div>
+    const el = (
+      <div>
+        test<span>test</span>test
+      </div>
+    )
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.setStart(el.firstElementChild.firstChild, 2)
-    range.setEnd(el.firstElementChild.firstChild, 3)
-    window.getSelection().addRange(range)
+    range.setStart(el.firstElementChild!.firstChild!, 2)
+    range.setEnd(el.firstElementChild!.firstChild!, 3)
+    window.getSelection()!.addRange(range)
 
     expect(getText()).to.equal('s')
   })
 
   it('should return selected text when part of two nodes are selected', () => {
-    const el = <div>test<span>test</span>test</div>
+    const el = (
+      <div>
+        test<span>test</span>test
+      </div>
+    )
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.setStart(el.firstElementChild.firstChild, 2)
-    range.setEnd(el.lastChild, 3)
-    window.getSelection().addRange(range)
+    range.setStart(el.firstElementChild!.firstChild!, 2)
+    range.setEnd(el.lastChild!, 3)
+    window.getSelection()!.addRange(range)
 
     expect(getText()).to.equal('sttes')
   })
@@ -81,17 +94,15 @@ describe('getText', () => {
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.setStart(el.firstElementChild.firstChild, 2)
-    range.setEnd(el.lastElementChild.firstChild, 3)
-    window.getSelection().addRange(range)
+    range.setStart(el.firstElementChild!.firstChild!, 2)
+    range.setEnd(el.lastElementChild!.firstChild!, 3)
+    window.getSelection()!.addRange(range)
 
     expect(getText()).to.equal('st\ntest\ntes')
   })
 
   it('should return selected text on input', () => {
-    const el = (
-      <input type='text' value='test' />
-    ) as HTMLInputElement
+    const el = <input type="text" value="test" /> as HTMLInputElement
     $root.appendChild(el)
 
     el.focus()
@@ -101,9 +112,7 @@ describe('getText', () => {
   })
 
   it('should return empty text on focused input with no selection', () => {
-    const el = (
-      <input type='text' />
-    ) as HTMLInputElement
+    const el = <input type="text" /> as HTMLInputElement
     $root.appendChild(el)
 
     el.focus()
@@ -116,25 +125,25 @@ describe('getText', () => {
     $root.appendChild(iframe)
 
     const el = <div>test</div>
-    iframe.contentDocument.body.appendChild(el)
+    iframe.contentDocument!.body.appendChild(el)
 
-    if (!iframe.contentWindow.getSelection()) {
+    if (!iframe.contentWindow!.getSelection()) {
       // buggy firefox
       return
     }
 
-    const range = iframe.contentDocument.createRange()
+    const range = iframe.contentDocument!.createRange()
     range.selectNode(el)
-    const selection = iframe.contentWindow.getSelection()
+    const selection = iframe.contentWindow!.getSelection()
 
     if (selection) {
       selection.addRange(range)
       expect(getText()).to.be.equal('')
-      expect(getText(iframe.contentWindow)).to.be.equal('test')
+      expect(getText(iframe.contentWindow as typeof window)).to.be.equal('test')
     } else {
       // buggy firefox
       expect(getText()).to.be.equal('')
-      expect(getText(iframe.contentWindow)).to.be.equal('')
+      expect(getText(iframe.contentWindow as typeof window)).to.be.equal('')
     }
   })
 
@@ -143,17 +152,17 @@ describe('getText', () => {
     $root.appendChild(iframe)
 
     const el = <div>test</div>
-    iframe.contentDocument.body.appendChild(el)
+    iframe.contentDocument!.body.appendChild(el)
 
-    const range = iframe.contentDocument.createRange()
+    const range = iframe.contentDocument!.createRange()
     range.selectNode(el)
-    const selection = iframe.contentWindow.getSelection()
+    const selection = iframe.contentWindow!.getSelection()
 
     if (selection) {
       selection.addRange(range)
     }
 
     expect(getText()).to.be.equal('')
-    expect(getText(iframe.contentWindow)).to.be.equal('')
+    expect(getText(iframe.contentWindow as typeof window)).to.be.equal('')
   })
 })

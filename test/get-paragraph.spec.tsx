@@ -11,7 +11,7 @@ describe('getParagraph', () => {
     $root = <div></div>
     document.body.appendChild($root)
 
-    window.getSelection().removeAllRanges()
+    window.getSelection()!.removeAllRanges()
   })
 
   after(() => {
@@ -30,7 +30,7 @@ describe('getParagraph', () => {
 
     const range = document.createRange()
     range.selectNode(el)
-    window.getSelection().addRange(range)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).to.be.equal('')
   })
@@ -47,7 +47,7 @@ describe('getParagraph', () => {
 
     const range = document.createRange()
     range.selectNode(el.children[1])
-    window.getSelection().addRange(range)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).to.be.equal('test')
   })
@@ -57,7 +57,7 @@ describe('getParagraph', () => {
       <div>
         <span>one</span>
         two
-        <span id='selected'>three</span>
+        <span id="selected">three</span>
         <i>four</i>
         five
         <div>six</div>
@@ -66,8 +66,8 @@ describe('getParagraph', () => {
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.selectNode(document.getElementById('selected'))
-    window.getSelection().addRange(range)
+    range.selectNode(document.getElementById('selected')!)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).equal('onetwothreefourfive')
   })
@@ -77,10 +77,10 @@ describe('getParagraph', () => {
       <div>
         <span>one</span>
         two
-        <span id='start'>three</span>
+        <span id="start">three</span>
         <i>four </i>
         five
-        <div id='end'>
+        <div id="end">
           six
           <strong>seven. </strong>
           <strong>eight?</strong>
@@ -92,9 +92,9 @@ describe('getParagraph', () => {
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.setStart(document.getElementById('start').firstChild, 2)
-    range.setEnd(document.getElementById('end').firstChild, 3)
-    window.getSelection().addRange(range)
+    range.setStart(document.getElementById('start')!.firstChild!, 2)
+    range.setEnd(document.getElementById('end')!.firstChild!, 3)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).equal('onetwothreefour five sixseven. eight?')
   })
@@ -107,9 +107,9 @@ describe('getParagraph', () => {
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.setStart(el.firstChild, 0)
-    range.setEnd(el.lastChild, 0)
-    window.getSelection().addRange(range)
+    range.setStart(el.firstChild!, 0)
+    range.setEnd(el.lastChild!, 0)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).to.be.equal('test')
   })
@@ -122,25 +122,25 @@ describe('getParagraph', () => {
       <div>
         <span>one</span>
         two
-        <span id='selected'>three</span>
+        <span id="selected">three</span>
         <i>four</i>
         five
         <div>six</div>
       </div>
     )
-    iframe.contentDocument.body.appendChild(el)
+    iframe.contentDocument!.body.appendChild(el)
 
-    if (!iframe.contentWindow.getSelection()) {
+    if (!iframe.contentWindow!.getSelection()) {
       // buggy firefox
       return
     }
 
-    const range = iframe.contentDocument.createRange()
-    range.selectNode(iframe.contentDocument.getElementById('selected'))
-    iframe.contentWindow.getSelection().addRange(range)
+    const range = iframe.contentDocument!.createRange()
+    range.selectNode(iframe.contentDocument!.getElementById('selected')!)
+    iframe.contentWindow!.getSelection()!.addRange(range)
 
     expect(getParagraph()).to.be.equal('')
-    expect(getParagraph(iframe.contentWindow)).to.be.equal('onetwothreefourfive')
+    expect(getParagraph(iframe.contentWindow as typeof window)).to.be.equal('onetwothreefourfive')
   })
 
   it('should ignore sibling comment nodes', () => {
@@ -148,7 +148,7 @@ describe('getParagraph', () => {
       <div>
         <a>one</a>
         two
-        <span id='selected'>three</span>
+        <span id="selected">three</span>
         <i>four</i>
         five
         <div>six</div>
@@ -160,8 +160,8 @@ describe('getParagraph', () => {
     el.insertBefore(document.createComment('this is a comment'), selected)
 
     const range = document.createRange()
-    range.selectNode(selected)
-    window.getSelection().addRange(range)
+    range.selectNode(selected!)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).equal('onetwothreefourfive')
   })
@@ -174,9 +174,9 @@ describe('getParagraph', () => {
     $root.appendChild(el)
 
     const range = document.createRange()
-    range.setStart(el.firstChild, 0)
-    range.setEnd(el.lastChild, 0)
-    window.getSelection().addRange(range)
+    range.setStart(el.firstChild!, 0)
+    range.setEnd(el.lastChild!, 0)
+    window.getSelection()!.addRange(range)
 
     expect(getParagraph()).equal('test')
   })
