@@ -6,15 +6,18 @@
 /**
  * Returns the selected text
  */
-export declare function getText(win?: Window): string;
+function getText(win?: Window): string
+function getTextFromSelection(selection: Selection | null, win?: Window): string
 /**
  * Returns the paragraph containing the selection text.
  */
-export declare function getParagraph(win?: Window): string;
+function getParagraph(win?: Window): string
+function getParagraphFromSelection(selection: Selection | null): string
 /**
  * Returns the sentence containing the selection text.
  */
-export declare function getSentence(win?: Window): string;
+function getSentence(win?: Window): string
+function getSentenceFromSelection(selection: Selection | null): string
 ```
 
 Optionally pass `window` of other frame to get selection within that frame.

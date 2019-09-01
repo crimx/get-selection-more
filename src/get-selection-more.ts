@@ -1,13 +1,15 @@
 /**
  * Returns the selected text
  */
-export function getText(win = window): string {
+export function getTextFromSelection(selection: Selection | null, win = window): string {
   // When called on an <iframe> that is not displayed (eg. where display: none is set)
   // Firefox will return null, whereas other browsers will return a Selection object
   // with Selection.type set to None.
-  const selection = (win.getSelection() || '').toString().trim()
   if (selection) {
-    return selection
+    const text = selection.toString().trim()
+    if (text) {
+      return text
+    }
   }
 
   // Currently getSelection() doesn't work on the content of <input> elements in Firefox
@@ -25,10 +27,16 @@ export function getText(win = window): string {
 }
 
 /**
+ * Returns the selected text
+ */
+export function getText(win = window): string {
+  return getTextFromSelection(win.getSelection(), win)
+}
+
+/**
  * Returns the paragraph containing the selection text.
  */
-export function getParagraph(win = window): string {
-  const selection = win.getSelection()
+export function getParagraphFromSelection(selection: Selection | null): string {
   if (!selection || selection.rangeCount <= 0) {
     return ''
   }
@@ -51,10 +59,16 @@ export function getParagraph(win = window): string {
 }
 
 /**
+ * Returns the paragraph containing the selection text.
+ */
+export function getParagraph(win = window): string {
+  return getParagraphFromSelection(win.getSelection())
+}
+
+/**
  * Returns the sentence containing the selection text.
  */
-export function getSentence(win = window): string {
-  const selection = win.getSelection()
+export function getSentenceFromSelection(selection: Selection | null): string {
   if (!selection || selection.rangeCount <= 0) {
     return ''
   }
@@ -80,6 +94,13 @@ export function getSentence(win = window): string {
     .trim()
 }
 
+/**
+ * Returns the sentence containing the selection text.
+ */
+export function getSentence(win = window): string {
+  return getSentenceFromSelection(win.getSelection())
+}
+
 function extractParagraphHead(range: Range): string {
   let startNode = range.startContainer
   let leadingText = ''
@@ -99,7 +120,7 @@ function extractParagraphHead(range: Range): string {
   }
 
   // parent prev siblings
-  for (let node = startNode; isInlineNode(node); node = node.parentElement) {
+  for (let node: Node | null = startNode; isInlineNode(node); node = node.parentElement) {
     for (let sibl = node.previousSibling; isInlineNode(sibl); sibl = sibl.previousSibling) {
       leadingText = getTextFromNode(sibl) + leadingText
     }
@@ -127,7 +148,7 @@ function extractParagraphTail(range: Range): string {
   }
 
   // parent next siblings
-  for (let node = endNode; isInlineNode(node); node = node.parentElement) {
+  for (let node: Node | null = endNode; isInlineNode(node); node = node.parentElement) {
     for (let sibl = node.nextSibling; isInlineNode(sibl); sibl = sibl.nextSibling) {
       tailingText += getTextFromNode(sibl)
     }
@@ -166,14 +187,14 @@ function extractSentenceTail(tailingText: string): string {
 
 function getTextFromNode(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) {
-    return (node as Text).nodeValue
+    return (node as Text).nodeValue || /* istanbul ignore next */ ''
   } else if (node.nodeType === Node.ELEMENT_NODE) {
     return (node as HTMLElement).innerText || /* istanbul ignore next: SVG? */ ''
   }
   return ''
 }
 
-function isInlineNode(node?: Node | null): boolean {
+function isInlineNode(node?: Node | null): node is Node {
   if (!node) {
     return false
   }
